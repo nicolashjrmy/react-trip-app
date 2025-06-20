@@ -42,10 +42,10 @@ export default function TripsScreen() {
       onPress={() => router.push(`/trip/${item.id}`)}
     >
       <View style={styles.tripHeader}>
-        <Text style={styles.tripName}>{item.name}</Text>
-        <Text style={styles.tripAmount}>${item.budget || 0}</Text>
+        <Text style={styles.tripTitle}>{item.title}</Text>
+        <Text style={styles.tripDestination}>{item.destination}</Text>
       </View>
-      <Text style={styles.tripDescription}>{item.description}</Text>
+      <Text style={styles.tripDescription}>{item.desc}</Text>
       <Text style={styles.tripDate}>
         {new Date(item.createdAt).toLocaleDateString()}
       </Text>
@@ -102,16 +102,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  tripName: {
+  tripTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
   },
-  tripAmount: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#007AFF',
-  },
+tripDestination: {
+  fontSize: 16,
+  fontWeight: '500',
+  color: '#28a745', // green for destination
+  fontStyle: 'italic',
+  maxWidth: 120,
+  textAlign: 'right',
+},
   tripDescription: {
     fontSize: 14,
     color: '#666',
@@ -154,47 +157,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
-  },
-  profileSection: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    backgroundColor: 'white',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 16,
-    color: '#666',
-  },
-  menuSection: {
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  menuText: {
-    fontSize: 16,
-    color: '#333',
-    marginLeft: 12,
-    flex: 1,
   },
 });

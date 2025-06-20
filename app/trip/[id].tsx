@@ -27,7 +27,7 @@ export default function TripDetailScreen() {
   const fetchExpenses = async () => {
     try {
       setLoading(true);
-      const response = await apiCall(`/trips/${id}/details`, { method: 'GET' });
+      const response = await apiCall(`/trip-details/${id}`, { method: 'GET' });
       setExpenses(response.data || []);
     } catch (error) {
       Alert.alert('Error', 'Failed to load expenses');
@@ -36,7 +36,20 @@ export default function TripDetailScreen() {
     }
   };
 
-  const renderExpense = ({ item }: { item: Expense }) => (
+const renderExpense = ({ item }: { item: Expense }) => {
+  // Parse participants if it's a string
+  let participants: number[] = [];
+  if (typeof item.participants === 'string') {
+    try {
+      participants = JSON.parse(item.participants);
+    } catch {
+      participants = [];
+    }
+  } else {
+    participants = item.participants;
+  }
+
+  return (
     <View style={styles.expenseCard}>
       <View style={styles.expenseHeader}>
         <Text style={styles.expenseName}>{item.name}</Text>
@@ -47,10 +60,11 @@ export default function TripDetailScreen() {
       )}
       <Text style={styles.expensePaidBy}>Paid by: User {item.paidBy}</Text>
       <Text style={styles.expenseParticipants}>
-        Participants: {item.participants.join(', ')}
+        Participants: {participants.join(', ')}
       </Text>
     </View>
   );
+};
 
   return (
     <>
@@ -59,7 +73,7 @@ export default function TripDetailScreen() {
           title: 'Trip Details',
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => router.push(`./trip/add-expense?tripId=${id}`)}
+              onPress={() => router.push(`./add-expense?tripId=${id}`)}
               style={styles.headerButton}
             >
               <Ionicons name="add" size={24} color="#007AFF" />
@@ -82,7 +96,7 @@ export default function TripDetailScreen() {
               <Text style={styles.emptySubtext}>Add your first expense to get started</Text>
               <TouchableOpacity
                 style={styles.addButton}
-                onPress={() => router.push(`./trip/add-expense?tripId=${id}`)}
+                onPress={() => router.push(`./add-expense?tripId=${id}`)}
               >
                 <Text style={styles.addButtonText}>Add Expense</Text>
               </TouchableOpacity>
@@ -92,7 +106,7 @@ export default function TripDetailScreen() {
         
         <TouchableOpacity
           style={styles.fab}
-          onPress={() => router.push(`./trip/add-expense?tripId=${id}`)}
+          onPress={() => router.push(`./add-expense?tripId=${id}`)}
         >
           <Ionicons name="add" size={24} color="white" />
         </TouchableOpacity>
@@ -105,64 +119,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  form: {
-    padding: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: 'white',
-    marginBottom: 16,
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  submitButton: {
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  submitButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    backgroundColor: 'transparent',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  cancelButtonText: {
-    color: '#666',
-    fontSize: 16,
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingVertical: 8,
   },
   expenseCard: {
     backgroundColor: 'white',
@@ -256,20 +212,5 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 8,
-  },
-  // Not found screen styles
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-  linkText: {
-    fontSize: 14,
-    color: '#2e78b7',
   },
 });

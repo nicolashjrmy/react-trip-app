@@ -23,68 +23,133 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     checkAuthStatus();
   }, []);
 
-const checkAuthStatus = async () => {
-  try {
-    const token = await AsyncStorage.getItem('token');
-    if (token) {
+  const isTokenExpired = (token: string): boolean => {
+    try {
       const decoded: any = jwtDecode(token);
-      setUser({
-        id: decoded.id,
-        name: decoded.username || '',
-        email: decoded.email || '',
-      });
+      const currentTime = Date.now() / 1000;
+      return decoded.exp < currentTime;
+    } catch {
+      return true;
     }
-  } catch (error) {
-    console.error('Auth check error:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-const login = async (email: string, password: string): Promise<AuthResponse> => {
-  try {
-    const response = await apiCall('/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    if (response.token) {
-      await AsyncStorage.setItem('token', response.token);
-      const decoded: any = jwtDecode(response.token);
-      setUser({
-        id: decoded.id,
-        name: decoded.username || '',
-        email: decoded.email || '',
+  const refreshAccessToken = async (): Promise<string | null> => {
+    try {
+      const refresh_token = await AsyncStorage.getItem('refresh_token');
+      if (!refresh_token) return null;
+
+      const response = await apiCall('/refreshToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token })
       });
-      return { success: true };
+
+      if (response.token) {
+        await AsyncStorage.setItem('token', response.token);
+        return response.token;
+      }
+      return null;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return null;
     }
-    return { success: false, error: 'Invalid response' };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
-};
+  };
+
+  const getValidToken = async (): Promise<string | null> => {
+    let token = await AsyncStorage.getItem('token');
+    
+    if (!token) return null;
+    
+    if (isTokenExpired(token)) {
+      token = await refreshAccessToken();
+    }
+    
+    return token;
+  };
+
+  const checkAuthStatus = async () => {
+    try {
+      const token = await getValidToken();
+      if (token) {
+        const decoded: any = jwtDecode(token);
+        setUser({
+          id: decoded.id,
+          name: decoded.username || '',
+          email: decoded.email || '',
+        });
+      } else {
+        await AsyncStorage.multiRemove(['token', 'refresh_token']);
+      }
+    } catch (error) {
+      console.error('Auth check error:', error);
+      await AsyncStorage.multiRemove(['token', 'refresh_token']);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (email: string, password: string): Promise<AuthResponse> => {
+    try {
+      const response = await apiCall('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (response.token && response.refresh_token) {
+        await AsyncStorage.multiSet([
+          ['token', response.token],
+          ['refresh_token', response.refresh_token]
+        ]);
+
+        const decoded: any = jwtDecode(response.token);
+        setUser({
+          id: decoded.id,
+          name: decoded.username || '',
+          email: decoded.email || '',
+        });
+
+        return { success: true };
+      }
+      return { success: false, error: 'Invalid response' };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  };
 
   const register = async (email: string, password: string, name: string): Promise<AuthResponse> => {
     try {
-    const response = await apiCall('/register', {
+      const response = await apiCall('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name })
-    });
+        body: JSON.stringify({ email, password, username: name, name })
+      });
       return { success: true, message: 'Registration successful' };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
   };
 
-const logout = async () => {
-  try {
-    await AsyncStorage.removeItem('token');
-    setUser(null);
-  } catch (error) {
-    console.error('Logout error:', error);
-  }
-};
+  const logout = async () => {
+    try {
+      const refresh_token = await AsyncStorage.getItem('refresh_token');
+      
+      if (refresh_token) {
+        await apiCall('/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token })
+        });
+      }
+
+      await AsyncStorage.multiRemove(['token', 'refresh_token']);
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      await AsyncStorage.multiRemove(['token', 'refresh_token']);
+      setUser(null);
+    }
+  };
 
   return (
     <AuthContext.Provider value={{

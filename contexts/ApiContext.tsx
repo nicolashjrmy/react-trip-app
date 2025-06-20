@@ -1,57 +1,95 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, ReactNode, useContext } from 'react';
+import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useContext } from 'react';
 
 interface ApiContextType {
-  apiCall: (endpoint: string, options?: RequestInit & { body?: any }) => Promise<any>;
-  BASE_URL: string;
+  apiCall: (endpoint: string, options?: RequestInit) => Promise<any>;
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
 
-export const ApiProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const BASE_URL = 'http://localhost:3310'; // Replace with your API URL
-
-  const apiCall = async (endpoint: string, options: RequestInit & { body?: any } = {}) => {
-    const url = `${BASE_URL}${endpoint}`;
-    
-    // Get token from AsyncStorage
-    const token = await AsyncStorage.getItem('token');
-    
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    if (options.body && typeof options.body === 'object') {
-      const formData = new URLSearchParams();
-      Object.keys(options.body).forEach(key => {
-        const value = options.body[key];
-        formData.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
-      });
-      config.body = formData.toString();
-    }
-
+export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const BASE_URL = 'http://192.168.18.153:3310'; 
+  const isTokenExpired = (token: string): boolean => {
     try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'API Error');
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+      const decoded: any = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
+      return decoded.exp < currentTime;
+    } catch {
+      return true;
     }
   };
 
+  const refreshAccessToken = async (): Promise<string | null> => {
+    try {
+      const refresh_token = await AsyncStorage.getItem('refresh_token');
+      if (!refresh_token) return null;
+
+      const response = await fetch(`${BASE_URL}/refreshToken`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.token) {
+          await AsyncStorage.setItem('token', data.token);
+          return data.token;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return null;
+    }
+  };
+
+  const getValidToken = async (): Promise<string | null> => {
+    let token = await AsyncStorage.getItem('token');
+    
+    if (!token) return null;
+    
+    if (isTokenExpired(token)) {
+      token = await refreshAccessToken();
+    }
+    
+    return token;
+  };
+
+  const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
+    const url = `${BASE_URL}${endpoint}`;
+    
+    const publicEndpoints = ['/login', '/register', '/refreshToken'];
+    const isPublicEndpoint = publicEndpoints.includes(endpoint);
+    
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+    if (!isPublicEndpoint) {
+      const token = await getValidToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'API call failed');
+    }
+
+    return response.json();
+  };
+
   return (
-    <ApiContext.Provider value={{ apiCall, BASE_URL }}>
+    <ApiContext.Provider value={{ apiCall }}>
       {children}
     </ApiContext.Provider>
   );

@@ -6,9 +6,9 @@ export interface User {
 
 export interface Trip {
   id: number;
-  name: string;
-  description?: string;
-  budget?: number;
+  title: string;
+  destination:string;
+  desc?: string;
   createdAt: string;
 }
 
