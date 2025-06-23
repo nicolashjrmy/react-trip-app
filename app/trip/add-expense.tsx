@@ -107,6 +107,7 @@ export default function AddExpenseScreen() {
         options={{
           title: 'Add Expense',
           presentation: 'modal',
+          headerShown: true
         }}
       />
       

@@ -37,7 +37,6 @@ export default function TripDetailScreen() {
   };
 
 const renderExpense = ({ item }: { item: Expense }) => {
-  // Parse participants if it's a string
   let participants: number[] = [];
   if (typeof item.participants === 'string') {
     try {
@@ -53,7 +52,7 @@ const renderExpense = ({ item }: { item: Expense }) => {
     <View style={styles.expenseCard}>
       <View style={styles.expenseHeader}>
         <Text style={styles.expenseName}>{item.name}</Text>
-        <Text style={styles.expenseAmount}>${item.amount.toFixed(2)}</Text>
+        <Text style={styles.expenseAmount}>Rp {item.amount.toFixed()}</Text>
       </View>
       {item.desc && (
         <Text style={styles.expenseDescription}>{item.desc}</Text>
@@ -71,6 +70,7 @@ const renderExpense = ({ item }: { item: Expense }) => {
       <Stack.Screen
         options={{
           title: 'Trip Details',
+          headerShown: true,    
           headerRight: () => (
             <TouchableOpacity
               onPress={() => router.push(`./add-expense?tripId=${id}`)}

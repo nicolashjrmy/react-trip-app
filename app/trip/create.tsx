@@ -62,6 +62,7 @@ export default function CreateTripScreen() {
         options={{
           title: 'Create Trip',
           presentation: 'modal',
+          headerShown: true
         }}
       />
       
