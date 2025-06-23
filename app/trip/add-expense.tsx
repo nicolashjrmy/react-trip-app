@@ -1,4 +1,4 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
@@ -103,14 +103,6 @@ export default function AddExpenseScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: 'Add Expense',
-          presentation: 'modal',
-          headerShown: true
-        }}
-      />
-      
       <KeyboardAvoidingView 
         style={styles.container} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

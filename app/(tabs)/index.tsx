@@ -63,18 +63,27 @@ export default function TripsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
+            <Ionicons name="earth-outline" size={64} color="#ccc" />
             <Text style={styles.emptyText}>No trips yet</Text>
             <Text style={styles.emptySubtext}>Create your first trip to get started</Text>
+            <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => router.push(`/trip/create`)}
+            >
+            <Text style={styles.addButtonText}>Add Trip</Text>
+            </TouchableOpacity>
           </View>
         }
       />
       
+      {trips.length > 0 && (
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/trip/create')}
       >
         <Ionicons name="add" size={24} color="white" />
       </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -141,6 +150,7 @@ tripDestination: {
     color: '#999',
     textAlign: 'center',
     marginTop: 8,
+    marginBottom: 24,
   },
   fab: {
     position: 'absolute',
@@ -158,4 +168,15 @@ tripDestination: {
     shadowRadius: 6,
     elevation: 8,
   },
+  addButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },  
 });

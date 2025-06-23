@@ -1,4 +1,4 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
@@ -16,7 +16,7 @@ import { useApi } from '../../contexts/ApiContext';
 export default function CreateTripScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [budget, setBudget] = useState('');
+  const [destination, setDestination] = useState('');
   const [loading, setLoading] = useState(false);
   const { apiCall } = useApi();
 
@@ -28,13 +28,13 @@ export default function CreateTripScreen() {
 
     try {
       setLoading(true);
-        const response = await apiCall('/trip', {
+        const response = await apiCall('/trips/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-            name: name.trim(),
-            description: description.trim(),
-            budget: budget ? parseFloat(budget) : 0,
+            title: name.trim(),
+            desc: description.trim(),
+            destination: destination.trim(),
         }),
     });
       
@@ -42,9 +42,12 @@ export default function CreateTripScreen() {
         { 
           text: 'OK', 
           onPress: () => {
-            router.dismiss();
             if (response.data?.id) {
-              router.push(`./trip/${response.data.id}`);
+              router.dismissAll();
+              router.push(`/trip/${response.data.id}`);
+            } else {
+              router.dismissAll();
+              router.push('/(tabs)/');
             }
           }
         }
@@ -56,16 +59,13 @@ export default function CreateTripScreen() {
     }
   };
 
+  const handleCancel = () => {
+    router.dismissAll()
+    router.replace('/(tabs)/');
+  };
+
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: 'Create Trip',
-          presentation: 'modal',
-          headerShown: true
-        }}
-      />
-      
       <KeyboardAvoidingView 
         style={styles.container} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -81,6 +81,14 @@ export default function CreateTripScreen() {
               maxLength={100}
             />
 
+            <Text style={styles.label}>Destination</Text>
+            <TextInput
+              style={styles.input}
+              value={destination}
+              onChangeText={setDestination}
+              placeholder="e.g., Rumah Bapaklu"
+            />
+
             <Text style={styles.label}>Description</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
@@ -90,16 +98,6 @@ export default function CreateTripScreen() {
               multiline
               numberOfLines={4}
               maxLength={500}
-            />
-
-            <Text style={styles.label}>Budget (Optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={budget}
-              onChangeText={setBudget}
-              placeholder="0.00"
-              keyboardType="numeric"
-              returnKeyType="done"
             />
 
             <TouchableOpacity
@@ -114,7 +112,7 @@ export default function CreateTripScreen() {
             
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={() => router.dismiss()}
+              onPress={handleCancel}
               disabled={loading}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>

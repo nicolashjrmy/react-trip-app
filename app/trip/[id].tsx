@@ -10,19 +10,27 @@ import {
     View,
 } from 'react-native';
 import { useApi } from '../../contexts/ApiContext';
-import { Expense } from '../../types';
+import { Expense, Trip } from '../../types';
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [trip, setTrip] = useState<Trip | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
   const { apiCall } = useApi();
 
   useEffect(() => {
     if (id) {
+      fetchTrip();
       fetchExpenses();
     }
   }, [id]);
+
+  const fetchTrip = async () => {
+    const response = await apiCall(`/trips/${id}`, { method: 'GET' });
+    setTrip(response.data);
+  };
+
 
   const fetchExpenses = async () => {
     try {
@@ -49,6 +57,7 @@ const renderExpense = ({ item }: { item: Expense }) => {
   }
 
   return (
+    
     <View style={styles.expenseCard}>
       <View style={styles.expenseHeader}>
         <Text style={styles.expenseName}>{item.name}</Text>
@@ -67,21 +76,11 @@ const renderExpense = ({ item }: { item: Expense }) => {
 
   return (
     <>
-      <Stack.Screen
+        <Stack.Screen
         options={{
-          title: 'Trip Details',
-          headerShown: true,    
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push(`./add-expense?tripId=${id}`)}
-              style={styles.headerButton}
-            >
-              <Ionicons name="add" size={24} color="#007AFF" />
-            </TouchableOpacity>
-          ),
+          title: trip ? trip.title + ' Details' : 'Trip Details'
         }}
       />
-      
       <View style={styles.container}>
         <FlatList
           data={expenses}
@@ -103,13 +102,15 @@ const renderExpense = ({ item }: { item: Expense }) => {
             </View>
           }
         />
-        
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => router.push(`./add-expense?tripId=${id}`)}
-        >
-          <Ionicons name="add" size={24} color="white" />
-        </TouchableOpacity>
+
+        {expenses.length > 0 && (
+            <TouchableOpacity
+                style={styles.fab}
+                onPress={() => router.push(`./add-expense?tripId=${id}`)}
+            >
+            <Ionicons name="add" size={24} color="white" />
+            </TouchableOpacity>
+        )}
       </View>
     </>
   );
