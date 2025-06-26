@@ -4,8 +4,8 @@ import { AuthProvider } from '../contexts/AuthContext';
 
 export default function RootLayout() {
   return (
-    <ApiProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <ApiProvider>
         <Stack>
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }}/>
@@ -35,7 +35,7 @@ export default function RootLayout() {
 
             <Stack.Screen name="not_found" options={{ title: 'Not Found' }} />
         </Stack>
-      </AuthProvider>
-    </ApiProvider>
+      </ApiProvider>
+    </AuthProvider>
   );
 }

@@ -1,6 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from 'jwt-decode';
 import React, { createContext, useContext } from 'react';
+import { useAuth } from './AuthContext';
 
 interface ApiContextType {
   apiCall: (endpoint: string, options?: RequestInit) => Promise<any>;
@@ -10,52 +9,7 @@ const ApiContext = createContext<ApiContextType | undefined>(undefined);
 
 export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const BASE_URL = 'http://192.168.18.153:3310'; 
-  const isTokenExpired = (token: string): boolean => {
-    try {
-      const decoded: any = jwtDecode(token);
-      const currentTime = Date.now() / 1000;
-      return decoded.exp < currentTime;
-    } catch {
-      return true;
-    }
-  };
-
-  const refreshAccessToken = async (): Promise<string | null> => {
-    try {
-      const refresh_token = await AsyncStorage.getItem('refresh_token');
-      if (!refresh_token) return null;
-
-      const response = await fetch(`${BASE_URL}/refreshToken`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.token) {
-          await AsyncStorage.setItem('token', data.token);
-          return data.token;
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      return null;
-    }
-  };
-
-  const getValidToken = async (): Promise<string | null> => {
-    let token = await AsyncStorage.getItem('token');
-    
-    if (!token) return null;
-    
-    if (isTokenExpired(token)) {
-      token = await refreshAccessToken();
-    }
-    
-    return token;
-  };
+  const { getValidToken } = useAuth();
 
   const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
     const url = `${BASE_URL}${endpoint}`;
@@ -63,29 +17,38 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const publicEndpoints = ['/login', '/register', '/refreshToken'];
     const isPublicEndpoint = publicEndpoints.includes(endpoint);
     
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string>),
+    };
 
+    // Only add authorization header for protected endpoints
     if (!isPublicEndpoint) {
       const token = await getValidToken();
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        // If we can't get a valid token, throw an error
+        throw new Error('Authentication required');
       }
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'API call failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error(`API call failed for ${endpoint}:`, error);
+      throw error;
     }
-
-    return response.json();
   };
 
   return (
