@@ -1,35 +1,39 @@
 import { Follower, Following, Profile } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useApi } from '../../contexts/ApiContext';
-import { useAuth } from '../../contexts/AuthContext';
 
-export default function ProfileScreen() {
-  const { logout } = useAuth();
+export default function UserProfileScreen() {
+  const { id } = useLocalSearchParams(); // Get user ID from route params
   const [following, setFollowing] = useState<Following[]>([]);
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const { apiCall } = useApi();
+
+  const targetUserId = parseInt(id as string);
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const response = await apiCall('/users/profile', { method: 'GET' });
+      const response = await apiCall(`/users/${targetUserId}`, { method: 'GET' });
       setProfile(response.data || null);
+      setIsFollowing(response.data?.isFollowing || false);
     } catch (error) {
       Alert.alert('Error', 'Failed to load profile');
     } finally {
@@ -40,7 +44,7 @@ export default function ProfileScreen() {
   const fetchFollowers = async () => {
     try {
       setLoading(true);
-      const response = await apiCall('/users/profile/followers', { method: 'GET' });
+      const response = await apiCall(`/users/${targetUserId}/followers`, { method: 'GET' });
       setFollowers(response.data || []);
     } catch (error) {
       Alert.alert('Error', 'Failed to load followers');
@@ -52,7 +56,7 @@ export default function ProfileScreen() {
   const fetchFollowing = async () => {
     try {
       setLoading(true);
-      const response = await apiCall('/users/profile/following', { method: 'GET' });
+      const response = await apiCall(`/users/${targetUserId}/following`, { method: 'GET' });
       setFollowing(response.data || []);
     } catch (error) {
       Alert.alert('Error', 'Failed to load following');
@@ -61,33 +65,55 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          onPress: async () => {
-            await logout();
-            router.replace('/(auth)/login');
-          }, 
-          style: 'destructive' 
-        },
-      ]
-    );
+  const handleFollow = async () => {
+    try {
+      setFollowLoading(true);
+      await apiCall(`/users/follow/${targetUserId}`, { method: 'POST' });
+      setIsFollowing(true);
+      if (profile) {
+        setProfile({
+          ...profile,
+          followers: (profile.followers || 0) + 1
+        });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to follow user');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    try {
+      setFollowLoading(true);
+      await apiCall(`/users/unfollow/${targetUserId}`, { method: 'POST' });
+      setIsFollowing(false);
+      if (profile) {
+        setProfile({
+          ...profile,
+          followers: Math.max((profile.followers || 0) - 1, 0)
+        });
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to unfollow user');
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const handleUserItemPress = (user: Following | Follower) => {
-    setShowFollowersModal(false)
-    setShowFollowingModal(false)
     router.push(`/profile/${user.id}`);
   };
 
+  const handleBackPress = () => {
+    router.back();
+  };
+
   React.useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (targetUserId) {
+      fetchProfile();
+    }
+  }, [targetUserId]);
 
   const renderUserItem = ({ item }: { item: Following | Follower }) => (
     <TouchableOpacity 
@@ -146,6 +172,12 @@ export default function ProfileScreen() {
   }
 
   return (
+    <>
+    <Stack.Screen
+        options={{
+          title: profile ? profile.username + ' Profile' : 'Profile'
+        }}
+      />
     <View style={styles.container}>
       <View style={styles.profileSection}>
         <View style={styles.avatar}>
@@ -153,6 +185,34 @@ export default function ProfileScreen() {
         </View>
         <Text style={styles.name}>{profile?.username || 'User'}</Text>
         <Text style={styles.email}>{profile?.email || 'email@example.com'}</Text>
+        
+        {/* Follow/Unfollow Button */}
+        <TouchableOpacity
+          style={[
+            styles.followButton,
+            isFollowing ? styles.followingButton : styles.followButton
+          ]}
+          onPress={isFollowing ? handleUnfollow : handleFollow}
+          disabled={followLoading}
+        >
+          {followLoading ? (
+            <ActivityIndicator size="small" color={isFollowing ? "#007AFF" : "#fff"} />
+          ) : (
+            <>
+              <Ionicons 
+                name={isFollowing ? "checkmark" : "add"} 
+                size={16} 
+                color={isFollowing ? "#007AFF" : "#fff"} 
+              />
+              <Text style={[
+                styles.followButtonText,
+                isFollowing ? styles.followingButtonText : styles.followButtonText
+              ]}>
+                {isFollowing ? 'Following' : 'Follow'}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
         
         {/* Followers/Following Stats */}
         <View style={styles.statsContainer}>
@@ -190,26 +250,6 @@ export default function ProfileScreen() {
         )}
       </View>
 
-      {/* Menu Section */}
-      <View style={styles.menuSection}>
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="settings-outline" size={24} color="#666" />
-          <Text style={styles.menuText}>Settings</Text>
-          <Ionicons name="chevron-forward" size={20} color="#666" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="help-circle-outline" size={24} color="#666" />
-          <Text style={styles.menuText}>Help & Support</Text>
-          <Ionicons name="chevron-forward" size={20} color="#666" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
-          <Text style={[styles.menuText, { color: '#FF3B30' }]}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Modals */}
       {renderModal(
         showFollowersModal,
@@ -225,6 +265,7 @@ export default function ProfileScreen() {
         following
       )}
     </View>
+    </>
   );
 }
 
@@ -241,6 +282,26 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  headerSpacer: {
+    flex: 1,
   },
   profileSection: {
     alignItems: 'center',
@@ -267,6 +328,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 20,
+  },
+  followButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginBottom: 20,
+    minWidth: 100,
+    justifyContent: 'center',
+  },
+  followingButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  followButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  followingButtonText: {
+    color: '#007AFF',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -295,23 +381,6 @@ const styles = StyleSheet.create({
   },
   loadingIndicator: {
     marginTop: 10,
-  },
-  menuSection: {
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  menuText: {
-    fontSize: 16,
-    color: '#333',
-    marginLeft: 12,
-    flex: 1,
   },
   modalContainer: {
     flex: 1,

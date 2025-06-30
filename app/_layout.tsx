@@ -33,6 +33,14 @@ export default function RootLayout() {
         }}   
       />
 
+      <Stack.Screen 
+            name="profile/[id]" 
+            options={{ 
+              headerShown: true,
+              headerBackTitle: 'Back'
+            }} 
+          />
+
             <Stack.Screen name="not_found" options={{ title: 'Not Found' }} />
         </Stack>
       </ApiProvider>

@@ -4,6 +4,15 @@ export interface User {
   email: string;
 }
 
+export interface Profile {
+  id: number;
+  name: string;
+  email: string;
+  username: string;
+  following: number;
+  followers: number;
+}
+
 export interface Trip {
   id: number;
   title: string;
@@ -47,4 +56,16 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   success?: boolean;
+}
+
+export interface Following {
+  id: number;
+  username: string;
+  name: string;
+}
+
+export interface Follower {
+  id: number;
+  username: string;
+  name: string;
 }
