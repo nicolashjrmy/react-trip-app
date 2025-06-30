@@ -24,6 +24,7 @@ export default function UserProfileScreen() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [showUnfollow, setShowUnfollow] = useState(false);
   const { apiCall } = useApi();
 
   const targetUserId = parseInt(id as string);
@@ -102,6 +103,8 @@ export default function UserProfileScreen() {
   };
 
   const handleUserItemPress = (user: Following | Follower) => {
+    setShowFollowersModal(false)
+    setShowFollowingModal(false)
     router.push(`/profile/${user.id}`);
   };
 
@@ -194,7 +197,14 @@ export default function UserProfileScreen() {
           ]}
           onPress={isFollowing ? handleUnfollow : handleFollow}
           disabled={followLoading}
+          onPressIn={() => {
+            if (isFollowing) setShowUnfollow(true);
+          }}
+          onPressOut={() => {
+            if (isFollowing) setShowUnfollow(false);
+          }}
         >
+        
           {followLoading ? (
             <ActivityIndicator size="small" color={isFollowing ? "#007AFF" : "#fff"} />
           ) : (
@@ -208,7 +218,7 @@ export default function UserProfileScreen() {
                 styles.followButtonText,
                 isFollowing ? styles.followingButtonText : styles.followButtonText
               ]}>
-                {isFollowing ? 'Following' : 'Follow'}
+                {isFollowing ? (showUnfollow ? "Unfollow" : "Following") : "Follow"}
               </Text>
             </>
           )}

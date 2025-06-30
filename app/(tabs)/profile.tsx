@@ -1,6 +1,6 @@
 import { Follower, Following, Profile } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -85,9 +85,11 @@ export default function ProfileScreen() {
     router.push(`/profile/${user.id}`);
   };
 
-  React.useEffect(() => {
+  useFocusEffect(
+    React.useCallback(() => {
     fetchProfile();
-  }, []);
+    }, [])
+  );
 
   const renderUserItem = ({ item }: { item: Following | Follower }) => (
     <TouchableOpacity 
