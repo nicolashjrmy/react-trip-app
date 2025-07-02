@@ -27,7 +27,7 @@ export interface Expense {
   desc?: string;
   amount: number;
   paidBy: number;
-  participants: number[];
+  participants: number[]; 
   customSplits?: CustomSplit[];
   additionalFees?: AdditionalFee[];
   splitType?: 'equal' | 'custom';

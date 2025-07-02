@@ -34,14 +34,28 @@ export default function RootLayout() {
       />
 
       <Stack.Screen 
-            name="profile/[id]" 
-            options={{ 
-              headerShown: true,
-              headerBackTitle: 'Back'
-            }} 
-          />
+        name="profile/[id]" 
+        options={{ 
+          headerShown: true,
+          headerBackTitle: 'Back'
+        }} 
+      />
+      <Stack.Screen 
+        name="profile/edit" 
+        options={{ 
+          headerShown: false,
+          headerBackTitle: 'Back'
+        }} 
+      />
+      <Stack.Screen 
+        name="profile/change-password" 
+        options={{ 
+          headerShown: false,
+          headerBackTitle: 'Back'
+        }} 
+      />
 
-            <Stack.Screen name="not_found" options={{ title: 'Not Found' }} />
+        <Stack.Screen name="not_found" options={{ title: 'Not Found' }} />
         </Stack>
       </ApiProvider>
     </AuthProvider>

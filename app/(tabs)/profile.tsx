@@ -61,6 +61,14 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleEditProfile = () => {
+    router.push('/profile/edit')
+  }
+  
+  const handleChangePassword = () => {
+    router.push('/profile/change-password')
+  }  
+
   const handleLogout = () => {
     Alert.alert(
       'Logout',
@@ -194,15 +202,15 @@ export default function ProfileScreen() {
 
       {/* Menu Section */}
       <View style={styles.menuSection}>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={handleEditProfile}>
           <Ionicons name="settings-outline" size={24} color="#666" />
-          <Text style={styles.menuText}>Settings</Text>
+          <Text style={styles.menuText}>Edit Profile</Text>
           <Ionicons name="chevron-forward" size={20} color="#666" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="help-circle-outline" size={24} color="#666" />
-          <Text style={styles.menuText}>Help & Support</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={handleChangePassword}>
+          <Ionicons name="lock-closed-outline" size={24} color="#666" />
+          <Text style={styles.menuText}>Change Password</Text>
           <Ionicons name="chevron-forward" size={20} color="#666" />
         </TouchableOpacity>
 
@@ -380,4 +388,22 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 16,
   },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    marginTop: 20,
+    backgroundColor: '#f0f8ff',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+},
+  editButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: '600',
+    marginLeft: 6,
+},  
 });
