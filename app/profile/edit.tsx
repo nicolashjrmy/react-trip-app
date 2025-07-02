@@ -1,6 +1,6 @@
 import { Profile } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -135,23 +135,25 @@ export default function EditProfileScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
-          <Ionicons name="close" size={24} color="#007AFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity 
-          onPress={handleSave} 
-          style={[styles.headerButton, saving && styles.disabledButton]}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color="#007AFF" />
-          ) : (
-            <Text style={styles.saveButtonText}>Save</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <Stack.Screen
+        options={{
+          title: 'Edit Profile',
+          headerLeft: () => (
+            <TouchableOpacity onPress={handleCancel} style={{ paddingHorizontal: 16 }}>
+              <Ionicons name="close" size={24} color="#007AFF" />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity onPress={handleSave} disabled={saving} style={{ paddingHorizontal: 16, opacity: saving ? 0.6 : 1 }}>
+              {saving ? (
+                <ActivityIndicator size="small" color="#007AFF" />
+              ) : (
+                <Text style={{ color: '#007AFF', fontWeight: '600', fontSize: 16 }}>Save</Text>
+              )}
+            </TouchableOpacity>
+          ),
+        }}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Profile Picture Section */}

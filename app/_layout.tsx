@@ -40,21 +40,6 @@ export default function RootLayout() {
           headerBackTitle: 'Back'
         }} 
       />
-      <Stack.Screen 
-        name="profile/edit" 
-        options={{ 
-          headerShown: false,
-          headerBackTitle: 'Back'
-        }} 
-      />
-      <Stack.Screen 
-        name="profile/change-password" 
-        options={{ 
-          headerShown: false,
-          headerBackTitle: 'Back'
-        }} 
-      />
-
         <Stack.Screen name="not_found" options={{ title: 'Not Found' }} />
         </Stack>
       </ApiProvider>

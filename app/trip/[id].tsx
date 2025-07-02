@@ -31,7 +31,6 @@ export default function TripDetailScreen() {
     setTrip(response.data);
   };
 
-
   const fetchExpenses = async () => {
     try {
       setLoading(true);
@@ -44,39 +43,52 @@ export default function TripDetailScreen() {
     }
   };
 
-const renderExpense = ({ item }: { item: Expense }) => {
-  let participants: number[] = [];
-  if (typeof item.participants === 'string') {
-    try {
-      participants = JSON.parse(item.participants);
-    } catch {
-      participants = [];
-    }
-  } else {
-    participants = item.participants;
-  }
+  const handleExpensePress = (expenseId: number) => {
+    router.push(`./expense-detail?tripId=${id}&expenseId=${expenseId}`);
+  };
 
-  return (
-    
-    <View style={styles.expenseCard}>
-      <View style={styles.expenseHeader}>
-        <Text style={styles.expenseName}>{item.name}</Text>
-        <Text style={styles.expenseAmount}>Rp {item.amount.toFixed()}</Text>
-      </View>
-      {item.desc && (
-        <Text style={styles.expenseDescription}>{item.desc}</Text>
-      )}
-      <Text style={styles.expensePaidBy}>Paid by: User {item.paidBy}</Text>
-      <Text style={styles.expenseParticipants}>
-        Participants: {participants.join(', ')}
-      </Text>
-    </View>
-  );
-};
+  const renderExpense = ({ item }: { item: Expense }) => {
+    let participants: number[] = [];
+    if (typeof item.participants === 'string') {
+      try {
+        participants = JSON.parse(item.participants);
+      } catch {
+        participants = [];
+      }
+    } else {
+      participants = item.participants;
+    }
+
+    return (
+      <TouchableOpacity 
+        style={styles.expenseCard}
+        onPress={() => handleExpensePress(item.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.expenseHeader}>
+          <Text style={styles.expenseName}>{item.name}</Text>
+          <Text style={styles.expenseAmount}>Rp {item.amount.toFixed()}</Text>
+        </View>
+        {item.desc && (
+          <Text style={styles.expenseDescription}>{item.desc}</Text>
+        )}
+        <Text style={styles.expensePaidBy}>Paid by: {item.paidBy}</Text>
+        <View style={styles.expenseParticipantsRow}>
+          <Text style={styles.expenseParticipants}>
+            Total Participants: {item.countParticipant}
+          </Text>
+          <View style={styles.expenseFooter}>
+            <Text style={styles.tapToViewText}>more details</Text>
+            <Ionicons name="chevron-forward" size={16} color="#999" />
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <>
-        <Stack.Screen
+      <Stack.Screen
         options={{
           title: trip ? trip.title + ' Details' : 'Trip Details'
         }}
@@ -104,12 +116,12 @@ const renderExpense = ({ item }: { item: Expense }) => {
         />
 
         {expenses.length > 0 && (
-            <TouchableOpacity
-                style={styles.fab}
-                onPress={() => router.push(`./add-expense?tripId=${id}`)}
-            >
+          <TouchableOpacity
+            style={styles.fab}
+            onPress={() => router.push(`./add-expense?tripId=${id}`)}
+          >
             <Ionicons name="add" size={24} color="white" />
-            </TouchableOpacity>
+          </TouchableOpacity>
         )}
       </View>
     </>
@@ -164,6 +176,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
   },
+  expenseFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  tapToViewText: {
+    fontSize: 11,
+    color: '#007AFF',
+    fontStyle: 'italic',
+  },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -214,4 +236,10 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
   },
+  expenseParticipantsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+},
 });
