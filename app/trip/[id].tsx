@@ -2,36 +2,42 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { useApi } from '../../contexts/ApiContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Expense, Trip } from '../../types';
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [trip, setTrip] = useState<Trip | null>(null);
+  const [tripLoading, setTripLoading] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
   const { apiCall } = useApi();
+  const { user } = useAuth()
 
-  useEffect(() => {
-    if (id) {
-      fetchTrip();
-      fetchExpenses();
-    }
-  }, [id]);
+    const fetchTrip = async () => {
+      setTripLoading(true);
+      try {
+        const response = await apiCall(`/trips/${id}`, { method: 'GET' });
+        if (response.data?.isComplete === true) {
+          router.replace(`./complete?id=${id}`);
+          return;
+        }
+        setTrip(response.data);
+      } finally {
+        setTripLoading(false);
+      }
+    };
 
-  const fetchTrip = async () => {
-    const response = await apiCall(`/trips/${id}`, { method: 'GET' });
-    setTrip(response.data);
-  };
-
-  const fetchExpenses = async () => {
+    const fetchExpenses = async () => {
     try {
       setLoading(true);
       const response = await apiCall(`/trip-details/${id}`, { method: 'GET' });
@@ -42,6 +48,49 @@ export default function TripDetailScreen() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (id) {
+      fetchTrip();
+      fetchExpenses();
+    }
+  }, [id]);
+
+    if (tripLoading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading trips...</Text>
+      </View>
+    );
+  }
+
+  const handleCompleteTrip = async () => {
+    Alert.alert(
+      'Complete Trip',
+      'Are you sure you want to complete this trip? This action cannot be undone and will calculate final settlements.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Complete',
+          style: 'default',
+          onPress: async () => {
+            try {
+              await apiCall(`/trips/complete/${id}`, { method: 'PUT' });
+              Alert.alert('Success', 'Trip completed successfully!', [
+                {
+                  text: 'OK',
+                  onPress: () => router.push(`./complete?id=${id}`)
+                }
+              ]);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to complete trip');
+            }
+          }
+        }
+      ]
+    );
+  };  
 
   const handleExpensePress = (expenseId: number) => {
     router.push(`./expense-detail?tripId=${id}&expenseId=${expenseId}`);
@@ -88,9 +137,19 @@ export default function TripDetailScreen() {
 
   return (
     <>
-      <Stack.Screen
+<Stack.Screen
         options={{
-          title: trip ? trip.title + ' Details' : 'Trip Details'
+          title: trip ? trip.title + ' Details' : 'Trip Details',
+          headerRight: () => (
+            trip && user?.id === trip.createdBy ? (
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={handleCompleteTrip}
+              >
+                <Ionicons name="checkmark-circle" size={24} color="#007AFF" />
+              </TouchableOpacity>
+            ) : null
+          ),
         }}
       />
       <View style={styles.container}>
@@ -132,6 +191,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   expenseCard: {
     backgroundColor: 'white',

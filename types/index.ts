@@ -18,7 +18,10 @@ export interface Trip {
   title: string;
   destination:string;
   desc?: string;
+  createdBy: number;
   createdAt: string;
+  isComplete: boolean;
+  isArchive: boolean;
 }
 
 export interface Expense {
