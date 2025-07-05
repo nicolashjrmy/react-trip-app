@@ -83,6 +83,7 @@ export default function TripSettlementScreen() {
   useEffect(() => {
     if (id) {
       fetchSettlement();
+      fetchExpenseReport()
     }
   }, [id]);
 
@@ -280,9 +281,9 @@ export default function TripSettlementScreen() {
           <Text style={styles.modalTitle}>Detailed Report</Text>
           <View style={styles.modalHeaderButtons}>
             <TouchableOpacity style={styles.shareButton}>
-              <Ionicons name="share-outline" size={20} color="#007AFF" />
+              <Ionicons name="share-outline" size={24} color="#007AFF" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowReportModal(false)} style={styles.closeButton}>
+            <TouchableOpacity onPress={() => setShowReportModal(false)}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
@@ -379,7 +380,6 @@ export default function TripSettlementScreen() {
           title: 'Trip Settlement',
           headerRight: () => (
             <TouchableOpacity onPress={() => {
-              console.log('Report button pressed');
               setShowReportModal(true);
               if (expenseReport.length === 0) {
                 fetchExpenseReport();
@@ -411,7 +411,7 @@ export default function TripSettlementScreen() {
               {/* View Balances Button */}
               <TouchableOpacity 
                 style={styles.viewBalancesButton}
-                onPress={() => setShowBalancesModal(true)}
+                onPressOut={() => setShowBalancesModal(true)}
               >
                 <View style={styles.buttonContent}>
                   <Ionicons name="people-outline" size={20} color="#007AFF" />
