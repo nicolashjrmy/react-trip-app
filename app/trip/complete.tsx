@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import * as Sharing from 'expo-sharing';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   FlatList,
   Modal,
   RefreshControl,
@@ -14,6 +16,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import ViewShot, { captureRef } from 'react-native-view-shot';
 import { useApi } from '../../contexts/ApiContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -79,6 +82,7 @@ export default function TripSettlementScreen() {
   const [reportLoading, setReportLoading] = useState(false);
   const { apiCall } = useApi();
   const { user } = useAuth();
+  const reportRef = useRef(null);
 
   useEffect(() => {
     if (id) {
@@ -126,7 +130,6 @@ export default function TripSettlementScreen() {
           text: 'Mark Paid',
           onPress: async () => {
             try {
-              // Call your API to mark payment as paid
               await apiCall(`/trips/${id}/settlement/pay`, {
                 method: 'PUT',
                 body: JSON.stringify({
@@ -136,7 +139,6 @@ export default function TripSettlementScreen() {
                 })
               });
               
-              // Update local state
               if (settlementData) {
                 const updatedTransactions = [...settlementData.transactions];
                 updatedTransactions[index] = { ...transaction, isPaid: true };
@@ -162,6 +164,27 @@ export default function TripSettlementScreen() {
     await fetchSettlement();
     setRefreshing(false);
   };
+
+  const shareReport = async () => {
+    try {
+      if (!reportRef.current) return;
+
+  const uri = await captureRef(reportRef, {
+    format: 'png',
+    quality: 1,
+    result: 'tmpfile',
+    width: Dimensions.get('window').width * 2,
+  });
+
+    await Sharing.shareAsync(uri, {
+      dialogTitle: 'Share Expense Report',
+    });
+  } catch (error) {
+    console.error('Share error:', error);
+    Alert.alert('Error', 'Failed to share the report.');
+  }
+};
+
 
   const renderBalance = ({ item }: { item: Balance }) => (
     <View style={styles.balanceCard}>
@@ -280,7 +303,11 @@ export default function TripSettlementScreen() {
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>Detailed Report</Text>
           <View style={styles.modalHeaderButtons}>
-            <TouchableOpacity style={styles.shareButton}>
+            <TouchableOpacity 
+              style={styles.shareButton} 
+              onPress={shareReport}
+              disabled={reportLoading || expenseReport.length === 0}
+            >
               <Ionicons name="share-outline" size={24} color="#007AFF" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowReportModal(false)}>
@@ -288,18 +315,20 @@ export default function TripSettlementScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        
+
         <ScrollView 
           style={styles.modalContent} 
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollViewContent}
         >
+        <ViewShot ref={reportRef} options={{ format: 'jpg', quality: 1}} style={{ backgroundColor: '#fcfcfc' }}>
           {reportLoading ? (
             <View style={styles.reportLoadingContainer}>
               <ActivityIndicator size="large" color="#007AFF" />
               <Text style={styles.loadingText}>Loading detailed report...</Text>
             </View>
           ) : (
+            
             <View style={styles.reportSection}>
               <Text style={styles.reportSectionTitle}>💰 Expense Breakdown</Text>
               {expenseReport.length === 0 ? (
@@ -350,6 +379,7 @@ export default function TripSettlementScreen() {
               )}
             </View>
           )}
+        </ViewShot>
         </ScrollView>
       </SafeAreaView>
     </Modal>

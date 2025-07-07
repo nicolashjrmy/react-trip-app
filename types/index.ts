@@ -17,6 +17,7 @@ export interface Trip {
   id: number;
   title: string;
   destination:string;
+  participant: string[];
   desc?: string;
   createdBy: number;
   createdAt: string;
@@ -72,4 +73,20 @@ export interface Follower {
   id: number;
   username: string;
   name: string;
+}
+
+export interface Participant {
+  id: string;
+  username: string;
+  name: string;
+}
+
+export interface ParticipantWithStatus {
+  id: number;
+  name: string;
+  username: string;
+  email?: string;
+  avatar?: string;
+  isInvited?: boolean;
+  joinedAt?: string;
 }
