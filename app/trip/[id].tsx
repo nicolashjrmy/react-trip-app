@@ -84,8 +84,9 @@ export default function TripDetailScreen() {
   const generateInviteLink = async () => {
     try {
       setLoadingInvite(true);
-      const response = await apiCall(`/trips/${id}/invite-link`, { method: 'POST' });
-      setInviteLink(response.data.inviteLink);
+      const response = await apiCall(`/trips/${id}/invite-link`, { method: 'GET' });
+      setInviteLink(response.link);
+
     } catch (error) {
       Alert.alert('Error', 'Failed to generate invite link');
     } finally {
@@ -141,7 +142,7 @@ export default function TripDetailScreen() {
 
     try {
       await Share.share({
-        message: `Join my trip "${trip?.title}" on our expense sharing app! Use this link: ${inviteLink}`,
+        message: `Join my trip "${trip?.title}" on our expense sharing app! Use this link:`,
         url: inviteLink,
         title: `Join ${trip?.title}`,
       });
@@ -243,7 +244,7 @@ export default function TripDetailScreen() {
       >
         <View style={styles.expenseHeader}>
           <Text style={styles.expenseName}>{item.name}</Text>
-          <Text style={styles.expenseAmount}>Rp {item.amount.toFixed()}</Text>
+          <Text style={styles.expenseAmount}>Rp {item.amount.toLocaleString()}</Text>
         </View>
         {item.desc && (
           <Text style={styles.expenseDescription}>{item.desc}</Text>
@@ -462,11 +463,9 @@ export default function TripDetailScreen() {
             
             {/* Invite Link Section */}
             <View style={styles.inviteLinkSection}>
-              <Text style={styles.sectionTitle}>Invite by Link</Text>
               <TouchableOpacity
                 style={styles.shareLinkButton}
                 onPress={handleShareInviteLink}
-                disabled={loadingInvite}
               >
                 {loadingInvite ? (
                   <ActivityIndicator size="small" color="white" />
